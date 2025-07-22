@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import * as AWS from 'aws-sdk';
+import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
+import { DynamoDBDocumentClient, UpdateCommand, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { ReturnValue } from '@aws-sdk/client-dynamodb';
 import * as dotenv from 'dotenv';
 dotenv.config();
 
-const dynamoDb = new AWS.DynamoDB.DocumentClient({
-  region: process.env.AWS_REGION,
-  // Las credenciales se toman automáticamente de process.env
-});
+const client = new DynamoDBClient({ region: process.env.AWS_REGION });
+const dynamoDb = DynamoDBDocumentClient.from(client);
 const TABLE_NAME = 'TotalesVentas';
 const TOTAL_ID = 'total';
 
@@ -19,7 +19,6 @@ export class VentasService {
   }
 
   private async actualizarTotal(monto: number): Promise<number> {
-    // Usar UpdateItem para incrementar el total de forma atómica
     const params = {
       TableName: TABLE_NAME,
       Key: { id: TOTAL_ID },
@@ -31,9 +30,9 @@ export class VentasService {
         ':monto': monto,
         ':zero': 0,
       },
-      ReturnValues: 'UPDATED_NEW',
+      ReturnValues: 'UPDATED_NEW' as ReturnValue,
     };
-    const result = await dynamoDb.update(params).promise();
+    const result = await dynamoDb.send(new UpdateCommand(params));
     return result.Attributes?.total ?? 0;
   }
 
@@ -42,7 +41,7 @@ export class VentasService {
       TableName: TABLE_NAME,
       Key: { id: TOTAL_ID },
     };
-    const result = await dynamoDb.get(params).promise();
+    const result = await dynamoDb.send(new GetCommand(params));
     return result.Item?.total ?? 0;
   }
 } 
