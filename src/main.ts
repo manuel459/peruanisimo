@@ -7,18 +7,21 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({
-    origin: '*', // O especifica tu dominio de frontend
+    origin: '*',
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
-  const config = new DocumentBuilder()
-    .setTitle('API de Ventas')
-    .setDescription('Documentación de la API de ventas con WebSocket')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
+  if (process.env.NODE_ENV !== 'production') {
+    const config = new DocumentBuilder()
+      .setTitle('API de Ventas')
+      .setDescription('Documentación de la API de ventas con WebSocket')
+      .setVersion('1.0')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
+
   await app.listen(3000);
 }
 bootstrap();
